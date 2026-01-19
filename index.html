@@ -50,15 +50,14 @@
       color: var(--subtext);
     }
 
-    .field {
+    .row {
       display: flex;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       align-items: center;
     }
 
     input, select {
-      flex: 1;
       padding: 10px 12px;
       border-radius: 8px;
       border: 1px solid var(--border);
@@ -67,7 +66,13 @@
       min-width: 0;
     }
 
-    select { flex: 0 0 200px; }
+    input.url {
+      flex: 1;
+    }
+
+    select.mode {
+      flex: 0 0 180px;
+    }
 
     button {
       padding: 10px 14px;
@@ -85,18 +90,6 @@
     .secondary { background: #eef2ff; color: var(--primary); }
     .secondary:hover { background: #e0e7ff; }
 
-    .log {
-      background: #0f172a;
-      color: #e5e7eb;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 13px;
-      border-radius: 8px;
-      padding: 12px;
-      height: 180px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-    }
-
     .hint { font-size: 12px; color: var(--subtext); line-height: 1.5; }
 
     .divider {
@@ -110,7 +103,7 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       overflow: hidden;
-      height: 260px;
+      height: 240px;
       background: #fff;
     }
 
@@ -118,6 +111,18 @@
       width: 100%;
       height: 100%;
       border: 0;
+    }
+
+    .log {
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      border-radius: 8px;
+      padding: 12px;
+      height: 180px;
+      overflow-y: auto;
+      white-space: pre-wrap;
     }
   </style>
 </head>
@@ -127,34 +132,70 @@
 
     <h1>H5 ↔ App 调用测试</h1>
 
-    <!-- 新增：链接打开 -->
+    <!-- 多组 URL 打开 -->
     <div class="card">
-      <div class="card-title">链接打开（通用）</div>
+      <div class="card-title">多组 URL 打开</div>
 
-      <div class="field">
-        <input id="openUrl" placeholder="输入要打开的链接，例如 https://example.com 或 myapp://openPage?page=setting&from=h5"
-               value="https://example.com" />
-        <button class="primary" onclick="openLink()">打开</button>
+      <!-- 组 1：默认微信 scheme -->
+      <div class="row">
+        <input id="url1" class="url" placeholder="输入要打开的链接"
+               value="weixin://dl/business/?t=JONK3hVOkfl" />
+        <button class="primary" onclick="openLink('url1','mode1')">打开</button>
       </div>
-
-      <div class="field">
-        <select id="openMode" title="选择打开方式">
-          <option value="a_blank">A 标签：新窗口/新标签（target=_blank）</option>
+      <div class="row">
+        <select id="mode1" class="mode">
+          <option value="a_blank">A 标签：新窗口/新标签</option>
           <option value="location">当前页跳转（location.href）</option>
           <option value="window_open">window.open：新窗口/新标签</option>
           <option value="iframe">iframe 内嵌打开（适合 http/https）</option>
         </select>
-
-        <button class="secondary" onclick="copyLink()">复制链接</button>
-      </div>
-
-      <div class="hint">
-        小提示：如果是 <b>myapp://</b> 这类 Scheme，一般用「A 标签」或「当前页跳转」更靠谱；iframe 通常不生效。
+        <button class="secondary" onclick="copyFrom('url1')">复制</button>
       </div>
 
       <div class="divider"></div>
 
-      <div class="card-title" style="margin-bottom: 8px;">iframe 预览区</div>
+      <!-- 组 2 -->
+      <div class="row">
+        <input id="url2" class="url" placeholder="输入要打开的链接（示例：https://example.com）"
+               value="https://example.com" />
+        <button class="primary" onclick="openLink('url2','mode2')">打开</button>
+      </div>
+      <div class="row">
+        <select id="mode2" class="mode">
+          <option value="a_blank">A 标签：新窗口/新标签</option>
+          <option value="location">当前页跳转（location.href）</option>
+          <option value="window_open">window.open：新窗口/新标签</option>
+          <option value="iframe">iframe 内嵌打开（适合 http/https）</option>
+        </select>
+        <button class="secondary" onclick="copyFrom('url2')">复制</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 组 3 -->
+      <div class="row">
+        <input id="url3" class="url" placeholder="输入要打开的链接（示例：myapp://openPage?page=setting&from=h5）"
+               value="myapp://openPage?page=setting&from=h5" />
+        <button class="primary" onclick="openLink('url3','mode3')">打开</button>
+      </div>
+      <div class="row">
+        <select id="mode3" class="mode">
+          <option value="a_blank">A 标签：新窗口/新标签</option>
+          <option value="location">当前页跳转（location.href）</option>
+          <option value="window_open">window.open：新窗口/新标签</option>
+          <option value="iframe">iframe 内嵌打开（适合 http/https）</option>
+        </select>
+        <button class="secondary" onclick="copyFrom('url3')">复制</button>
+      </div>
+
+      <div class="hint">
+        提示：<b>weixin:// / myapp://</b> 这种 Scheme，一般优先用「A 标签」或「location」；
+        iframe 通常不会拉起 App。window.open 可能会被浏览器拦截弹窗。
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="card-title" style="margin-bottom: 8px;">iframe 预览区（使用 iframe 打开时显示）</div>
       <div class="iframe-wrap">
         <iframe id="previewFrame" src="about:blank"></iframe>
       </div>
@@ -163,9 +204,9 @@
     <!-- 参数配置 -->
     <div class="card">
       <div class="card-title">调用参数</div>
-      <div class="field">
-        <input id="page" placeholder="page" value="setting" />
-        <input id="from" placeholder="from" value="h5" />
+      <div class="row">
+        <input id="page" class="url" placeholder="page" value="setting" />
+        <input id="from" class="url" placeholder="from" value="h5" />
       </div>
       <div class="hint">将作为 URL Scheme / JSBridge 的参数</div>
     </div>
@@ -173,7 +214,7 @@
     <!-- 调用方式 -->
     <div class="card">
       <div class="card-title">调用方式</div>
-      <div class="field">
+      <div class="row">
         <button class="primary" onclick="callByScheme()">URL Scheme 调用</button>
         <button class="secondary" onclick="callByBridge()">JSBridge 调用</button>
       </div>
@@ -194,21 +235,17 @@
       el.scrollTop = el.scrollHeight;
     }
 
-    function getUrlInput() {
-      return (document.getElementById('openUrl').value || '').trim();
-    }
-
     function normalizeUrl(url) {
-      // 允许 myapp://, http(s):// 等
-      // 如果用户输入 example.com 这种没协议的，默认补 https://
       if (!url) return '';
+      // 已有协议（含自定义 scheme）就原样返回
       if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url)) return url;
+      // 没有协议默认补 https://
       return 'https://' + url;
     }
 
-    function openLink() {
-      const raw = getUrlInput();
-      const mode = document.getElementById('openMode').value;
+    function openLink(urlId, modeId) {
+      const raw = (document.getElementById(urlId).value || '').trim();
+      const mode = document.getElementById(modeId).value;
 
       if (!raw) {
         alert('请输入链接');
@@ -216,10 +253,9 @@
       }
 
       const url = normalizeUrl(raw);
-      log(`Open (${mode}) → ${url}`);
+      log(`Open (${urlId}/${mode}) → ${url}`);
 
       if (mode === 'a_blank') {
-        // 用 A 标签方式打开（更接近真实“点击链接”）
         const a = document.createElement('a');
         a.href = url;
         a.target = '_blank';
@@ -231,31 +267,28 @@
       }
 
       if (mode === 'location') {
-        // 当前页直接跳转
         window.location.href = url;
         return;
       }
 
       if (mode === 'window_open') {
-        // 某些浏览器可能拦截弹窗；通常用户手动点击按钮触发会好一些
         const w = window.open(url, '_blank', 'noopener,noreferrer');
         if (!w) {
           log('window.open 被浏览器拦截（可能需要允许弹窗）');
-          alert('window.open 可能被浏览器拦截了：请允许弹窗，或改用 “A 标签” 打开方式');
+          alert('window.open 可能被浏览器拦截：请允许弹窗，或改用 “A 标签/ location”');
         }
         return;
       }
 
       if (mode === 'iframe') {
-        // iframe 主要用于预览 http/https，scheme 一般无效
         const frame = document.getElementById('previewFrame');
         frame.src = url;
         return;
       }
     }
 
-    async function copyLink() {
-      const raw = getUrlInput();
+    async function copyFrom(urlId) {
+      const raw = (document.getElementById(urlId).value || '').trim();
       const url = normalizeUrl(raw);
       if (!url) return;
 
@@ -263,7 +296,6 @@
         await navigator.clipboard.writeText(url);
         log('Copied → ' + url);
       } catch (e) {
-        // 兼容性 fallback
         const ta = document.createElement('textarea');
         ta.value = url;
         document.body.appendChild(ta);
