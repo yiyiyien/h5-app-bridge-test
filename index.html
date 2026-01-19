@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>H5 ↔ App 调用测试</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --card: #ffffff;
+      --primary: #2563eb;
+      --border: #e5e7eb;
+      --text: #111827;
+      --subtext: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei";
+      color: var(--text);
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--subtext);
+    }
+
+    .field {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary {
+      background: #eef2ff;
+      color: var(--primary);
+    }
+
+    .secondary:hover {
+      background: #e0e7ff;
+    }
+
+    .log {
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      border-radius: 8px;
+      padding: 12px;
+      height: 160px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--subtext);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <h1>H5 ↔ App 调用测试</h1>
+
+    <!-- 参数配置 -->
+    <div class="card">
+      <div class="card-title">调用参数</div>
+      <div class="field">
+        <input id="page" placeholder="page" value="setting" />
+        <input id="from" placeholder="from" value="h5" />
+      </div>
+      <div class="hint">
+        将作为 URL Scheme / JSBridge 的参数
+      </div>
+    </div>
+
+    <!-- 调用方式 -->
+    <div class="card">
+      <div class="card-title">调用方式</div>
+      <div class="field">
+        <button class="primary" onclick="callByScheme()">URL Scheme 调用</button>
+        <button class="secondary" onclick="callByBridge()">JSBridge 调用</button>
+      </div>
+    </div>
+
+    <!-- 日志 -->
+    <div class="card">
+      <div class="card-title">日志</div>
+      <div id="log" class="log">Ready.</div>
+    </div>
+
+  </div>
+
+  <script>
+    function log(msg) {
+      const el = document.getElementById('log');
+      el.textContent += '\n' + msg;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function callByScheme() {
+      const page = document.getElementById('page').value;
+      const from = document.getElementById('from').value;
+      const url = `myapp://openPage?page=${page}&from=${from}`;
+      log('Scheme → ' + url);
+      window.location.href = url;
+    }
+
+    function callByBridge() {
+      const page = document.getElementById('page').value;
+      const from = document.getElementById('from').value;
+
+      if (window.MyAppBridge) {
+        log('JSBridge → openPage');
+        window.MyAppBridge.openPage({ page, from });
+      } else {
+        log('JSBridge not found');
+        alert('当前环境未注入 JSBridge');
+      }
+    }
+
+    // 供 App 回调测试
+    window.onAppCallback = function (data) {
+      log('App Callback → ' + JSON.stringify(data));
+    };
+  </script>
+</body>
+</html>
