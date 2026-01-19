@@ -55,6 +55,7 @@
       gap: 8px;
       margin-bottom: 8px;
       align-items: center;
+      flex-wrap: nowrap;
     }
 
     input, select {
@@ -67,7 +68,8 @@
     }
 
     input.url { flex: 1; }
-    select.mode { flex: 0 0 180px; }
+
+    select.mode { width: 200px; }
 
     button {
       padding: 10px 14px;
@@ -118,6 +120,31 @@
       overflow-y: auto;
       white-space: pre-wrap;
     }
+
+    /* 手机适配：每组两行
+       第一行：URL 输入
+       第二行：打开方式、复制、打开（按顺序）
+    */
+    @media (max-width: 520px) {
+      .link-group .row.url-row { margin-bottom: 10px; }
+      .link-group .row.ctrl-row { margin-bottom: 12px; }
+
+      .link-group .row.url-row input.url {
+        width: 100%;
+        flex: 1 1 100%;
+      }
+
+      .link-group .row.ctrl-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .link-group .row.ctrl-row select.mode {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 
@@ -129,50 +156,62 @@
       <div class="card-title">链接打开</div>
 
       <!-- 1 -->
-      <div class="row">
-        <input id="url1" class="url" value="weixin://dl/business/?t=JONK3hVOkfl" />
-        <button class="secondary" onclick="copyFrom('url1')">复制</button>
-        <button class="primary" onclick="openLink('url1','mode1')">打开</button>
-        <select id="mode1" class="mode">
-          <option value="a_blank">A 标签（推荐）</option>
-          <option value="location">location.href</option>
-          <option value="window_open">window.open</option>
-          <option value="iframe">iframe</option>
-        </select>
+      <div class="link-group">
+        <div class="row url-row">
+          <input id="url1" class="url" value="weixin://dl/business/?t=JONK3hVOkfl" />
+        </div>
+        <div class="row ctrl-row">
+          <select id="mode1" class="mode">
+            <option value="a_blank">A 标签</option>
+            <option value="location">location.href</option>
+            <option value="window_open">window.open</option>
+            <option value="iframe">iframe（仅 http/https）</option>
+          </select>
+          <button class="secondary" onclick="copyFrom('url1')">复制</button>
+          <button class="primary" onclick="openLink('url1','mode1')">打开</button>
+        </div>
       </div>
 
       <div class="divider"></div>
 
       <!-- 2 -->
-      <div class="row">
-        <input id="url2" class="url" value="https://baidu..com" />
-        <button class="secondary" onclick="copyFrom('url2')">复制</button>
-        <button class="primary" onclick="openLink('url2','mode2')">打开</button>
-        <select id="mode2" class="mode">
-          <option value="a_blank">A 标签</option>
-          <option value="location">location.href</option>
-          <option value="window_open">window.open</option>
-          <option value="iframe">iframe</option>
-        </select>
+      <div class="link-group">
+        <div class="row url-row">
+          <input id="url2" class="url" value="https://baidu.com" />
+        </div>
+        <div class="row ctrl-row">
+          <select id="mode2" class="mode">
+            <option value="a_blank">A 标签</option>
+            <option value="location">location.href</option>
+            <option value="window_open">window.open</option>
+            <option value="iframe">iframe（仅 http/https）</option>
+          </select>
+          <button class="secondary" onclick="copyFrom('url2')">复制</button>
+          <button class="primary" onclick="openLink('url2','mode2')">打开</button>
+        </div>
       </div>
 
       <div class="divider"></div>
 
       <!-- 3 -->
-      <div class="row">
-        <input id="url3" class="url" value="weixin://" />
-        <button class="secondary" onclick="copyFrom('url3')">复制</button>
-        <button class="primary" onclick="openLink('url3','mode3')">打开</button>
-        <select id="mode3" class="mode">
-          <option value="a_blank">A 标签</option>
-          <option value="location">location.href</option>
-          <option value="window_open">window.open</option>
-          <option value="iframe">iframe</option>
-        </select>
+      <div class="link-group">
+        <div class="row url-row">
+          <input id="url3" class="url" value="weixin://" />
+        </div>
+        <div class="row ctrl-row">
+          <select id="mode3" class="mode">
+            <option value="a_blank">A 标签</option>
+            <option value="location">location.href</option>
+            <option value="window_open">window.open</option>
+            <option value="iframe">iframe（仅 http/https）</option>
+          </select>
+          <button class="secondary" onclick="copyFrom('url3')">复制</button>
+          <button class="primary" onclick="openLink('url3','mode3')">打开</button>
+        </div>
       </div>
 
       <div class="hint">
-        建议：<b>scheme（weixin://、myapp://）</b> 优先用 A 标签或 location；iframe 只适合 http/https。
+        建议：<b>scheme（weixin:// 等）</b> 优先用 A 标签或 location；iframe 只适合 http/https。
       </div>
 
       <div class="divider"></div>
@@ -195,6 +234,7 @@
 
       function log(type, msg) {
         if (!logEl) return;
+
         const line = document.createElement('div');
         const time = new Date().toLocaleTimeString();
 
@@ -205,6 +245,7 @@
 
         line.style.color = color;
         line.textContent = `[${type}] ${time}  ${msg}`;
+
         logEl.appendChild(line);
         logEl.scrollTop = logEl.scrollHeight;
       }
@@ -218,15 +259,25 @@
       window.openLink = function (urlId, modeId) {
         const input = document.getElementById(urlId);
         const select = document.getElementById(modeId);
-        if (!input || !select) return;
+
+        if (!input || !select) {
+          log('FAIL', '找不到输入框或模式选择器');
+          return;
+        }
 
         const raw = (input.value || '').trim();
         const mode = select.value;
-        if (!raw) return alert('请输入链接');
+
+        if (!raw) {
+          log('FAIL', 'URL 为空，未执行打开');
+          alert('请输入链接');
+          return;
+        }
 
         const url = normalizeUrl(raw);
 
         if (mode === 'iframe' && !/^https?:\/\//.test(url)) {
+          log('FAIL', `iframe 不支持该协议 → ${url}`);
           alert('iframe 只支持 http / https');
           return;
         }
@@ -234,41 +285,75 @@
         log('INFO', `尝试打开 (${mode}) → ${url}`);
 
         if (mode === 'a_blank') {
-          const a = document.createElement('a');
-          a.href = url;
-          a.target = '_blank';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          log('SUCCESS', `A 标签触发成功 → ${url}`);
+          try {
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            log('SUCCESS', `A 标签触发成功 → ${url}`);
+          } catch (e) {
+            log('FAIL', `A 标签触发异常 → ${e && e.message ? e.message : e}`);
+          }
           return;
         }
 
         if (mode === 'location') {
+          log('SUCCESS', `location.href 跳转 → ${url}`);
           location.href = url;
           return;
         }
 
         if (mode === 'window_open') {
-          const w = window.open(url, '_blank');
-          if (!w) alert('window.open 被浏览器拦截');
+          const w = window.open(url, '_blank', 'noopener,noreferrer');
+          if (!w) {
+            log('FAIL', 'window.open 被浏览器拦截');
+            alert('window.open 被拦截，请改用 A 标签');
+          } else {
+            log('SUCCESS', `window.open 打开成功 → ${url}`);
+          }
           return;
         }
 
         if (mode === 'iframe') {
           const frame = document.getElementById('previewFrame');
+          if (!frame) {
+            log('FAIL', '找不到 iframe 容器');
+            return;
+          }
+
+          frame.onload = () => log('SUCCESS', `iframe 加载完成 → ${url}`);
+          frame.onerror = () => log('FAIL', `iframe 加载失败 → ${url}`);
+
           frame.src = url;
+          log('INFO', `iframe 加载中 → ${url}`);
         }
       };
 
       window.copyFrom = async function (id) {
         const input = document.getElementById(id);
-        if (!input || !input.value) return;
-        const url = normalizeUrl(input.value.trim());
+        if (!input) {
+          log('FAIL', '复制失败：找不到输入框');
+          return;
+        }
+
+        const raw = (input.value || '').trim();
+        if (!raw) {
+          log('FAIL', '复制失败：URL 为空');
+          return;
+        }
+
+        const url = normalizeUrl(raw);
+
         try {
           await navigator.clipboard.writeText(url);
           log('SUCCESS', `已复制 → ${url}`);
-        } catch {}
+        } catch (e) {
+          log('FAIL', `复制失败：${e && e.message ? e.message : e}`);
+          alert('复制失败，可能是浏览器权限限制');
+        }
       };
 
       log('INFO', '页面初始化完成');
