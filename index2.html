@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>URL / Scheme 打开测试</title>
+  <title>H5 ↔ App 调用测试</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -29,7 +29,7 @@
     h1 { font-size: 20px; margin: 0 0 12px; }
 
     .container {
-      max-width: 760px;
+      max-width: 720px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -53,7 +53,7 @@
     .row {
       display: flex;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       align-items: center;
     }
 
@@ -66,8 +66,13 @@
       min-width: 0;
     }
 
-    input.url { flex: 1; }
-    select.mode { flex: 0 0 180px; }
+    input.url {
+      flex: 1;
+    }
+
+    select.mode {
+      flex: 0 0 180px;
+    }
 
     button {
       padding: 10px 14px;
@@ -75,8 +80,8 @@
       border: none;
       font-size: 14px;
       cursor: pointer;
-      white-space: nowrap;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
     .primary { background: var(--primary); color: #fff; }
@@ -85,27 +90,28 @@
     .secondary { background: #eef2ff; color: var(--primary); }
     .secondary:hover { background: #e0e7ff; }
 
-    .hint {
-      font-size: 12px;
-      color: var(--subtext);
-      line-height: 1.5;
-    }
+    .hint { font-size: 12px; color: var(--subtext); line-height: 1.5; }
 
     .divider {
       height: 1px;
       background: var(--border);
       margin: 12px 0;
+      border-radius: 1px;
     }
 
     .iframe-wrap {
       border: 1px solid var(--border);
       border-radius: 10px;
       overflow: hidden;
-      height: 260px;
+      height: 240px;
       background: #fff;
     }
 
-    iframe { width: 100%; height: 100%; border: 0; }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
 
     .log {
       background: #0f172a;
@@ -114,7 +120,7 @@
       font-size: 13px;
       border-radius: 8px;
       padding: 12px;
-      height: 160px;
+      height: 180px;
       overflow-y: auto;
       white-space: pre-wrap;
     }
@@ -123,208 +129,208 @@
 
 <body>
   <div class="container">
-    <h1>URL / Scheme 打开测试</h1>
 
+    <h1>H5 ↔ App 调用测试</h1>
+
+    <!-- 多组 URL 打开 -->
     <div class="card">
-      <div class="card-title">链接打开</div>
+      <div class="card-title">多组 URL 打开</div>
 
-      <!-- 1 -->
+      <!-- 组 1：默认微信 scheme -->
       <div class="row">
-        <input id="url1" class="url" value="weixin://dl/business/?t=JONK3hVOkfl" />
+        <input id="url1" class="url" placeholder="输入要打开的链接"
+               value="weixin://dl/business/?t=JONK3hVOkfl" />
         <button class="primary" onclick="openLink('url1','mode1')">打开</button>
       </div>
       <div class="row">
         <select id="mode1" class="mode">
-          <option value="a_blank">A 标签（推荐）</option>
-          <option value="location">location.href</option>
-          <option value="window_open">window.open</option>
-          <option value="iframe">iframe</option>
+          <option value="a_blank">A 标签：新窗口/新标签</option>
+          <option value="location">当前页跳转（location.href）</option>
+          <option value="window_open">window.open：新窗口/新标签</option>
+          <option value="iframe">iframe 内嵌打开（适合 http/https）</option>
         </select>
         <button class="secondary" onclick="copyFrom('url1')">复制</button>
       </div>
 
       <div class="divider"></div>
 
-      <!-- 2 -->
+      <!-- 组 2 -->
       <div class="row">
-        <input id="url2" class="url" value="https://baidu.com" />
+        <input id="url2" class="url" placeholder="输入要打开的链接（示例：https://example.com）"
+               value="https://example.com" />
         <button class="primary" onclick="openLink('url2','mode2')">打开</button>
       </div>
       <div class="row">
         <select id="mode2" class="mode">
-          <option value="a_blank">A 标签</option>
-          <option value="location">location.href</option>
-          <option value="window_open">window.open</option>
-          <option value="iframe">iframe</option>
+          <option value="a_blank">A 标签：新窗口/新标签</option>
+          <option value="location">当前页跳转（location.href）</option>
+          <option value="window_open">window.open：新窗口/新标签</option>
+          <option value="iframe">iframe 内嵌打开（适合 http/https）</option>
         </select>
         <button class="secondary" onclick="copyFrom('url2')">复制</button>
       </div>
 
       <div class="divider"></div>
 
-      <!-- 3 -->
+      <!-- 组 3 -->
       <div class="row">
-        <input id="url3" class="url" value="weixin://" />
+        <input id="url3" class="url" placeholder="输入要打开的链接（示例：myapp://openPage?page=setting&from=h5）"
+               value="myapp://openPage?page=setting&from=h5" />
         <button class="primary" onclick="openLink('url3','mode3')">打开</button>
       </div>
       <div class="row">
         <select id="mode3" class="mode">
-          <option value="a_blank">A 标签</option>
-          <option value="location">location.href</option>
-          <option value="window_open">window.open</option>
-          <option value="iframe">iframe</option>
+          <option value="a_blank">A 标签：新窗口/新标签</option>
+          <option value="location">当前页跳转（location.href）</option>
+          <option value="window_open">window.open：新窗口/新标签</option>
+          <option value="iframe">iframe 内嵌打开（适合 http/https）</option>
         </select>
         <button class="secondary" onclick="copyFrom('url3')">复制</button>
       </div>
 
       <div class="hint">
-        建议：<b>scheme（weixin://、myapp://）</b> 优先用 A 标签或 location；iframe 只适合 http/https。
+        提示：<b>weixin:// / myapp://</b> 这种 Scheme，一般优先用「A 标签」或「location」；
+        iframe 通常不会拉起 App。window.open 可能会被浏览器拦截弹窗。
       </div>
 
       <div class="divider"></div>
 
-      <div class="card-title">iframe 预览区</div>
+      <div class="card-title" style="margin-bottom: 8px;">iframe 预览区（使用 iframe 打开时显示）</div>
       <div class="iframe-wrap">
         <iframe id="previewFrame" src="about:blank"></iframe>
       </div>
     </div>
 
+    <!-- 参数配置 -->
+    <div class="card">
+      <div class="card-title">调用参数</div>
+      <div class="row">
+        <input id="page" class="url" placeholder="page" value="setting" />
+        <input id="from" class="url" placeholder="from" value="h5" />
+      </div>
+      <div class="hint">将作为 URL Scheme / JSBridge 的参数</div>
+    </div>
+
+    <!-- 调用方式 -->
+    <div class="card">
+      <div class="card-title">调用方式</div>
+      <div class="row">
+        <button class="primary" onclick="callByScheme()">URL Scheme 调用</button>
+        <button class="secondary" onclick="callByBridge()">JSBridge 调用</button>
+      </div>
+    </div>
+
+    <!-- 日志 -->
     <div class="card">
       <div class="card-title">日志</div>
-      <div id="log" class="log"></div>
+      <div id="log" class="log">Ready.</div>
     </div>
+
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const logEl = document.getElementById('log');
+    function log(msg) {
+      const el = document.getElementById('log');
+      el.textContent += '\n' + msg;
+      el.scrollTop = el.scrollHeight;
+    }
 
-      function log(type, msg) {
-        if (!logEl) return;
+    function normalizeUrl(url) {
+      if (!url) return '';
+      // 已有协议（含自定义 scheme）就原样返回
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url)) return url;
+      // 没有协议默认补 https://
+      return 'https://' + url;
+    }
 
-        const line = document.createElement('div');
-        const time = new Date().toLocaleTimeString();
+    function openLink(urlId, modeId) {
+      const raw = (document.getElementById(urlId).value || '').trim();
+      const mode = document.getElementById(modeId).value;
 
-        let color = '#e5e7eb';
-        if (type === 'SUCCESS') color = '#4ade80';
-        if (type === 'FAIL') color = '#f87171';
-        if (type === 'INFO') color = '#93c5fd';
-
-        line.style.color = color;
-        line.textContent = `[${type}] ${time}  ${msg}`;
-
-        logEl.appendChild(line);
-        logEl.scrollTop = logEl.scrollHeight;
+      if (!raw) {
+        alert('请输入链接');
+        return;
       }
 
-      function normalizeUrl(url) {
-        if (!url) return '';
-        if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url)) return url;
-        return 'https://' + url;
+      const url = normalizeUrl(raw);
+      log(`Open (${urlId}/${mode}) → ${url}`);
+
+      if (mode === 'a_blank') {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
       }
 
-      window.openLink = function (urlId, modeId) {
-        const input = document.getElementById(urlId);
-        const select = document.getElementById(modeId);
+      if (mode === 'location') {
+        window.location.href = url;
+        return;
+      }
 
-        if (!input || !select) {
-          log('FAIL', '找不到输入框或模式选择器');
-          return;
+      if (mode === 'window_open') {
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) {
+          log('window.open 被浏览器拦截（可能需要允许弹窗）');
+          alert('window.open 可能被浏览器拦截：请允许弹窗，或改用 “A 标签/ location”');
         }
+        return;
+      }
 
-        const raw = (input.value || '').trim();
-        const mode = select.value;
+      if (mode === 'iframe') {
+        const frame = document.getElementById('previewFrame');
+        frame.src = url;
+        return;
+      }
+    }
 
-        if (!raw) {
-          log('FAIL', 'URL 为空，未执行打开');
-          alert('请输入链接');
-          return;
-        }
+    async function copyFrom(urlId) {
+      const raw = (document.getElementById(urlId).value || '').trim();
+      const url = normalizeUrl(raw);
+      if (!url) return;
 
-        const url = normalizeUrl(raw);
+      try {
+        await navigator.clipboard.writeText(url);
+        log('Copied → ' + url);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        log('Copied (fallback) → ' + url);
+      }
+    }
 
-        if (mode === 'iframe' && !/^https?:\/\//.test(url)) {
-          log('FAIL', `iframe 不支持该协议 → ${url}`);
-          alert('iframe 只支持 http / https');
-          return;
-        }
+    function callByScheme() {
+      const page = document.getElementById('page').value;
+      const from = document.getElementById('from').value;
+      const url = `myapp://openPage?page=${encodeURIComponent(page)}&from=${encodeURIComponent(from)}`;
+      log('Scheme → ' + url);
+      window.location.href = url;
+    }
 
-        log('INFO', `尝试打开 (${mode}) → ${url}`);
+    function callByBridge() {
+      const page = document.getElementById('page').value;
+      const from = document.getElementById('from').value;
 
-        if (mode === 'a_blank') {
-          try {
-            const a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            log('SUCCESS', `A 标签触发成功 → ${url}`);
-          } catch (e) {
-            log('FAIL', `A 标签触发异常 → ${e && e.message ? e.message : e}`);
-          }
-          return;
-        }
+      if (window.MyAppBridge && typeof window.MyAppBridge.openPage === 'function') {
+        log('JSBridge → openPage');
+        window.MyAppBridge.openPage({ page, from });
+      } else {
+        log('JSBridge not found');
+        alert('当前环境未注入 JSBridge（window.MyAppBridge.openPage 不存在）');
+      }
+    }
 
-        if (mode === 'location') {
-          log('SUCCESS', `location.href 跳转 → ${url}`);
-          location.href = url;
-          return;
-        }
-
-        if (mode === 'window_open') {
-          const w = window.open(url, '_blank', 'noopener,noreferrer');
-          if (!w) {
-            log('FAIL', 'window.open 被浏览器拦截');
-            alert('window.open 被拦截，请改用 A 标签');
-          } else {
-            log('SUCCESS', `window.open 打开成功 → ${url}`);
-          }
-          return;
-        }
-
-        if (mode === 'iframe') {
-          const frame = document.getElementById('previewFrame');
-          if (!frame) {
-            log('FAIL', '找不到 iframe 容器');
-            return;
-          }
-
-          frame.onload = () => log('SUCCESS', `iframe 加载完成 → ${url}`);
-          frame.onerror = () => log('FAIL', `iframe 加载失败 → ${url}`);
-
-          frame.src = url;
-          log('INFO', `iframe 加载中 → ${url}`);
-        }
-      };
-
-      window.copyFrom = async function (id) {
-        const input = document.getElementById(id);
-        if (!input) {
-          log('FAIL', '复制失败：找不到输入框');
-          return;
-        }
-
-        const raw = (input.value || '').trim();
-        if (!raw) {
-          log('FAIL', '复制失败：URL 为空');
-          return;
-        }
-
-        const url = normalizeUrl(raw);
-
-        try {
-          await navigator.clipboard.writeText(url);
-          log('SUCCESS', `已复制 → ${url}`);
-        } catch (e) {
-          log('FAIL', `复制失败：${e && e.message ? e.message : e}`);
-          alert('复制失败，可能是浏览器权限限制');
-        }
-      };
-
-      log('INFO', '页面初始化完成');
-    });
+    // 供 App 回调测试
+    window.onAppCallback = function (data) {
+      log('App Callback → ' + JSON.stringify(data));
+    };
   </script>
 </body>
 </html>
