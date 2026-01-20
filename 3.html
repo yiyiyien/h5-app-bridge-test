@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>图片验证页（Simple）</title>
+  <title>图片验证页（Simple Base64）</title>
   <style>
     :root{
       --bg:#ffffff;
@@ -54,7 +54,7 @@
       border-radius:10px; border:1px solid var(--border); background:#fff;
     }
 
-    input[type="file"], select, button, textarea{ font:inherit; }
+    input[type="file"], button, textarea{ font:inherit; }
     input[type="file"]{
       width:100%;
       padding:10px;
@@ -62,13 +62,6 @@
       border:1px dashed #d1d5db;
       background:#fff;
       font-size:13px;
-    }
-    select{
-      width:100%;
-      padding:10px;
-      border-radius:10px;
-      border:1px solid var(--border);
-      background:#fff;
     }
     button{
       width:100%;
@@ -149,7 +142,7 @@
 
 <body>
 <header>
-  <div class="title">图片验证页（Simple）</div>
+  <div class="title">图片验证页（Simple Base64）</div>
   <div class="sub" id="envLine"></div>
 </header>
 
@@ -166,7 +159,8 @@
       </div>
     </div>
     <div class="hint">
-      普通浏览器可验证「选图/下载」。App WebView 内如果注入了 <code>saveImage</code>，可验证「App 保存」。
+      本页固定使用 <b>纯 base64</b> 调用 App <code>saveImage</code>（不带 <code>data:image/...;base64,</code> 头）。
+      普通浏览器可验证「选图/下载」；App WebView 内可验证「App 保存」。
     </div>
   </section>
 
@@ -190,36 +184,18 @@
         <div class="k">MIME</div><div class="v" id="mimeType">-</div>
         <div class="k">大小</div><div class="v" id="fileSize">-</div>
         <div class="k">分辨率</div><div class="v" id="imgDim">-</div>
-      </div>
-    </div>
-
-    <div class="grid2" style="margin-top:12px;">
-      <div>
-        <div class="hint" style="margin:0 0 6px;">浏览器下载格式</div>
-        <select id="downloadExt">
-          <option value="png">png</option>
-          <option value="jpg">jpg</option>
-          <option value="webp">webp</option>
-        </select>
-      </div>
-      <div>
-        <div class="hint" style="margin:0 0 6px;">App saveImage 类型</div>
-        <select id="appValueType">
-          <option value="dataUrl">dataUrl（推荐）</option>
-          <option value="base64">base64（去掉头）</option>
-          <option value="url">url（可能不兼容 blob:）</option>
-        </select>
+        <div class="k">base64 长度</div><div class="v" id="b64Len">-</div>
       </div>
     </div>
 
     <div class="hint">
-      若 App 不支持 <code>blob:</code> URL，请选 dataUrl/base64。页面会把每次调用的入参/出参写入日志。
+      App 保存调用会优先尝试：<code>saveImage(base64String[, cb])</code>，失败再降级：<code>saveImage({type:"base64", value: base64, filename, mime}[, cb])</code>。
     </div>
   </section>
 
   <section class="card">
-    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">最近一次 saveImage payload</div>
-    <textarea id="lastPayload" readonly placeholder="点击「App 保存」后这里会出现 payload"></textarea>
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">最近一次 saveImage 入参</div>
+    <textarea id="lastPayload" readonly placeholder="点击「App 保存」后这里会显示 base64 字符串摘要和 payload"></textarea>
   </section>
 
   <details open>
@@ -242,7 +218,8 @@
 (() => {
   const state = {
     file: null,
-    dataUrl: null,
+    dataUrl: null,     // data:image/...;base64,...
+    base64: null,      // 纯 base64（不带头）
     blob: null,
     objectUrl: null,
     srcType: "-",
@@ -291,55 +268,80 @@
     });
   }
 
-  // ---- Bridge detect & call ----
+  // ---- Bridge detect ----
   function detectSaveImage() {
     if (typeof window.saveImage === "function") {
-      return { available: true, type: "window.saveImage(payload[, cb])" };
+      return { available: true, type: "window.saveImage(arg[, cb])" };
     }
     if (window.AppBridge && typeof window.AppBridge.saveImage === "function") {
-      return { available: true, type: "window.AppBridge.saveImage(payload[, cb])" };
+      return { available: true, type: "window.AppBridge.saveImage(arg[, cb])" };
     }
     const hasWK = !!(window.webkit && window.webkit.messageHandlers);
     if (hasWK) return { available: false, type: "iOS WKWebView（未发现可直接调用 saveImage 函数）" };
     return { available: false, type: "未检测到 saveImage" };
   }
 
-  async function callAppSaveImage(payload, timeoutMs = 15000) {
+  async function callAppSaveImage(base64, meta, timeoutMs = 15000) {
     const det = detectSaveImage();
     if (!det.available) throw new Error("saveImage 未注入（window.saveImage / window.AppBridge.saveImage 都不存在）");
 
     const fn = (typeof window.saveImage === "function") ? window.saveImage : window.AppBridge.saveImage;
     const start = performance.now();
 
-    let p = null;
+    function wrapPromiseOrCallback(invoke) {
+      let p = null;
 
-    // 先尝试 Promise
-    try {
-      const maybe = fn(payload);
-      if (maybe && typeof maybe.then === "function") p = maybe;
-    } catch {
-      p = null;
-    }
+      // 1) Promise
+      try {
+        const maybe = invoke();
+        if (maybe && typeof maybe.then === "function") p = maybe;
+      } catch {
+        p = null;
+      }
 
-    // 再尝试 callback
-    if (!p) {
-      p = new Promise((resolve, reject) => {
-        try { fn(payload, (res) => resolve(res)); }
-        catch (err) { reject(err); }
+      // 2) callback：fn(arg, cb)
+      if (!p) {
+        p = new Promise((resolve, reject) => {
+          try { invoke((res) => resolve(res)); }
+          catch (err) { reject(err); }
+        });
+      }
+
+      // 3) timeout
+      return new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error(`saveImage 超时（>${timeoutMs}ms）`)), timeoutMs);
+        p.then((r) => { clearTimeout(t); resolve(r); })
+         .catch((e) => { clearTimeout(t); reject(e); });
       });
     }
 
-    const withTimeout = new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`saveImage 超时（>${timeoutMs}ms）`)), timeoutMs);
-      p.then((r) => { clearTimeout(t); resolve(r); })
-       .catch((e) => { clearTimeout(t); reject(e); });
-    });
-
-    const result = await withTimeout;
-    return { result, costMs: Math.round(performance.now() - start), bridgeType: det.type };
+    // ✅ 优先：只传纯 base64 字符串（很多 App 只吃这个）
+    try {
+      const result = await wrapPromiseOrCallback((cb) => cb ? fn(base64, cb) : fn(base64));
+      return { result, costMs: Math.round(performance.now() - start), bridgeType: det.type, argMode: "base64-string" };
+    } catch (e1) {
+      // ⛳ 降级：传对象（如果你们是对象协议）
+      const payload = {
+        type: "base64",
+        value: base64,
+        filename: meta?.filename,
+        mime: meta?.mime
+      };
+      const result = await wrapPromiseOrCallback((cb) => cb ? fn(payload, cb) : fn(payload));
+      return { result, costMs: Math.round(performance.now() - start), bridgeType: det.type, argMode: "payload-object" };
+    }
   }
 
   // ---- Data prepare ----
+  function extractPureBase64(dataUrlOrBase64) {
+    if (!dataUrlOrBase64) return null;
+    const idx = dataUrlOrBase64.indexOf("base64,");
+    let b64 = idx >= 0 ? dataUrlOrBase64.slice(idx + 7) : dataUrlOrBase64;
+    // 去掉潜在空白
+    b64 = b64.replace(/\s+/g, "");
+    return b64;
+  }
+
   async function handleFile(file) {
     cleanupObjectUrl();
     state.file = file;
@@ -354,6 +356,8 @@
       fr.readAsDataURL(file);
     });
 
+    state.base64 = extractPureBase64(state.dataUrl);
+
     setPreview(state.objectUrl, state.srcType);
 
     try {
@@ -361,7 +365,7 @@
       state.imgWidth = dim.w; state.imgHeight = dim.h;
     } catch { state.imgWidth = state.imgHeight = null; }
 
-    log("BROWSER", "已选择图片", { name: file.name, type: file.type, size: file.size });
+    log("BROWSER", "已选择图片", { name: file.name, type: file.type, size: file.size, base64Length: state.base64?.length });
     updateUI();
   }
 
@@ -377,7 +381,7 @@
     ctx.font = "22px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas";
     ctx.fillText(nowISO(), 40, 140);
     ctx.font = "20px system-ui,-apple-system,Segoe UI,Roboto";
-    ctx.fillText("用于验证：浏览器下载 / App saveImage", 40, 190);
+    ctx.fillText("用于验证：浏览器下载 / App saveImage(base64)", 40, 190);
     return c.toDataURL("image/png");
   }
 
@@ -387,6 +391,7 @@
     state.file = null;
     state.srcType = "sample";
     state.dataUrl = dataUrl;
+    state.base64 = extractPureBase64(state.dataUrl);
 
     const blob = await (await fetch(dataUrl)).blob();
     state.blob = blob;
@@ -399,36 +404,17 @@
       state.imgWidth = dim.w; state.imgHeight = dim.h;
     } catch { state.imgWidth = state.imgHeight = null; }
 
-    log("BROWSER", "已加载示例图片", { mime: blob.type, size: blob.size });
+    log("BROWSER", "已加载示例图片", { mime: blob.type, size: blob.size, base64Length: state.base64?.length });
     updateUI();
   }
 
   async function browserDownload() {
     if (!state.blob) return;
-    const ext = $("downloadExt").value;
-    const filename = `image_${Date.now()}.${ext}`;
+    // 保持简单：直接下载当前 blob（不强制转码）
+    const ext = (state.file?.name && state.file.name.includes(".")) ? state.file.name.split(".").pop() : "png";
+    const filename = state.file?.name || `image_${Date.now()}.${ext}`;
 
-    let outBlob = state.blob;
-    try {
-      const img = new Image();
-      img.src = state.objectUrl || state.dataUrl;
-      await img.decode();
-
-      const c = document.createElement("canvas");
-      c.width = img.naturalWidth || 800;
-      c.height = img.naturalHeight || 600;
-      c.getContext("2d").drawImage(img, 0, 0);
-
-      const mimeMap = { png:"image/png", jpg:"image/jpeg", webp:"image/webp" };
-      const mime = mimeMap[ext] || "image/png";
-      outBlob = await new Promise((resolve) => c.toBlob(resolve, mime, 0.92));
-      if (!outBlob) outBlob = state.blob;
-    } catch (e) {
-      log("WARN", "转码失败，回退原 blob", String(e));
-      outBlob = state.blob;
-    }
-
-    const url = URL.createObjectURL(outBlob);
+    const url = URL.createObjectURL(state.blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
@@ -436,7 +422,7 @@
     a.click();
     a.remove();
 
-    log("BROWSER", "已触发下载", { filename, size: outBlob.size });
+    log("BROWSER", "已触发下载", { filename, size: state.blob.size });
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
@@ -445,30 +431,32 @@
     return `saved_${Date.now()}.${defaultExt || "png"}`;
   }
 
-  function buildSavePayload() {
-    const t = $("appValueType").value;
-
-    if (t === "dataUrl") {
-      if (!state.dataUrl) throw new Error("没有 dataUrl（请先选图/示例图）");
-      return { type: "dataUrl", value: state.dataUrl, filename: guessFilename("png") };
-    }
-    if (t === "base64") {
-      if (!state.dataUrl) throw new Error("没有 dataUrl（无法提取 base64）");
-      const idx = state.dataUrl.indexOf("base64,");
-      const base64 = idx >= 0 ? state.dataUrl.slice(idx + 7) : state.dataUrl;
-      return { type: "base64", value: base64, filename: guessFilename("png") };
-    }
-    return { type: "url", value: state.objectUrl || state.dataUrl, filename: guessFilename("png") };
-  }
-
   async function appSave() {
-    const payload = buildSavePayload();
-    $("lastPayload").value = safeStringify(payload);
-    log("APP", "准备调用 saveImage", payload);
+    if (!state.base64) {
+      alert("没有 base64（请先选图/示例图）");
+      return;
+    }
+
+    const meta = {
+      filename: guessFilename("png"),
+      mime: state.file?.type || state.blob?.type || "image/png",
+    };
+
+    // 给 textarea 展示摘要（避免贴太长）
+    const summary = {
+      base64Prefix: state.base64.slice(0, 60) + "...",
+      base64Length: state.base64.length,
+      meta,
+      // 备用对象 payload（用于对齐协议）
+      payloadObject: { type: "base64", value: "(base64)", filename: meta.filename, mime: meta.mime }
+    };
+    $("lastPayload").value = safeStringify(summary);
+
+    log("APP", "准备调用 saveImage（纯 base64）", { base64Length: state.base64.length, meta });
 
     try {
-      const { result, costMs, bridgeType } = await callAppSaveImage(payload);
-      log("APP", "saveImage 成功", { bridgeType, costMs, result });
+      const { result, costMs, bridgeType, argMode } = await callAppSaveImage(state.base64, meta);
+      log("APP", "saveImage 成功", { bridgeType, argMode, costMs, result });
       alert("saveImage 调用成功：请去相册/文件确认");
     } catch (e) {
       log("APP", "saveImage 失败", { error: String(e), stack: e?.stack });
@@ -481,10 +469,12 @@
     $("mimeType").textContent = state.file?.type || state.blob?.type || "-";
     $("fileSize").textContent = state.file ? prettyBytes(state.file.size) : (state.blob ? prettyBytes(state.blob.size) : "-");
     $("imgDim").textContent = (state.imgWidth && state.imgHeight) ? `${state.imgWidth} x ${state.imgHeight}` : "-";
+    $("b64Len").textContent = state.base64 ? String(state.base64.length) : "-";
 
     $("btnBrowserDownload").disabled = !state.blob;
+
     const det = detectSaveImage();
-    $("btnAppSave").disabled = !det.available || (!state.dataUrl && !state.objectUrl);
+    $("btnAppSave").disabled = !det.available || !state.base64;
   }
 
   function refreshEnv() {
@@ -542,4 +532,3 @@
 </script>
 </body>
 </html>
-
