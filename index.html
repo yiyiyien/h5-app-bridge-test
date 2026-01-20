@@ -42,6 +42,7 @@
       color: inherit;
       border-bottom: 1px solid #eee;
       -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
     }
 
     .item:last-child {
@@ -118,6 +119,91 @@
       </svg>
     </div>
 
+    <!-- 分组三：其他 -->
+    <div class="group-title">其他</div>
+
+    <!-- 1) a 标签 -->
+    <a class="item" href="https://after-sales-test.xair.cn/test/share">
+      <span class="title">API 测试（a 标签）</span>
+      <svg class="arrow" viewBox="0 0 24 24" fill="none">
+        <path d="M9 6l6 6-6 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
+    </a>
+
+    <!-- 2) location.href -->
+    <div class="item" onclick="location.href='https://after-sales-test.xair.cn/test/share'">
+      <span class="title">API 测试（location.href）</span>
+      <svg class="arrow" viewBox="0 0 24 24" fill="none">
+        <path d="M9 6l6 6-6 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- 3) location.replace -->
+    <div class="item" onclick="location.replace('https://after-sales-test.xair.cn/test/share')">
+      <span class="title">API 测试（location.replace）</span>
+      <svg class="arrow" viewBox="0 0 24 24" fill="none">
+        <path d="M9 6l6 6-6 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- 4) window.open -->
+    <div class="item" onclick="window.open('https://after-sales-test.xair.cn/test/share')">
+      <span class="title">API 测试（window.open）</span>
+      <svg class="arrow" viewBox="0 0 24 24" fill="none">
+        <path d="M9 6l6 6-6 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- 5) App 内部方法 openNewPage(json: String) -->
+    <div class="item" onclick="openNewPage(JSON.stringify({
+      url: 'https://after-sales-test.xair.cn/test/share',
+      title: '标题',
+      showTopBar: true,
+      isFullScreenOnLandscape: false,
+      backgroundColor: '0xFFFFFF'
+    }))">
+      <span class="title">API 测试（内部方法）</span>
+      <svg class="arrow" viewBox="0 0 24 24" fill="none">
+        <path d="M9 6l6 6-6 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
+    </div>
+
   </div>
+
+  <script>
+    // 注意：这里仅做兜底，避免在非 App 环境点击报错
+    // App 内如果已注入 openNewPage，会自动使用原生实现
+    if (typeof window.openNewPage !== "function") {
+      window.openNewPage = function (json) {
+        try {
+          console.log("openNewPage payload:", json);
+          var data = JSON.parse(json);
+          if (data && data.url) location.href = data.url; // 兜底：浏览器里就用普通跳转
+        } catch (e) {
+          console.warn("openNewPage parse error:", e);
+        }
+      };
+    }
+  </script>
 </body>
 </html>
