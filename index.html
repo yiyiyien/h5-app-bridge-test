@@ -25,6 +25,14 @@
       overflow: hidden;
     }
 
+    .group-title {
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #888;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
+
     .item {
       display: flex;
       align-items: center;
@@ -59,6 +67,10 @@
 
 <body>
   <div class="container">
+
+    <!-- 分组一：A标签 -->
+    <div class="group-title">A标签</div>
+
     <a class="item" href="1.html">
       <span class="title">打开链接</span>
       <svg class="arrow" viewBox="0 0 24 24" fill="none">
@@ -91,6 +103,21 @@
               stroke-linejoin="round"/>
       </svg>
     </a>
+
+    <!-- 分组二：location.href -->
+    <div class="group-title">location.href</div>
+
+    <div class="item" onclick="location.href='1.html'">
+      <span class="title">打开链接</span>
+      <svg class="arrow" viewBox="0 0 24 24" fill="none">
+        <path d="M9 6l6 6-6 6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
+    </div>
+
   </div>
 </body>
 </html>
