@@ -3,175 +3,120 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>图片验证页（Simple Base64）</title>
+  <title>图片验证页（分按钮验证 saveImage）</title>
   <style>
     :root{
-      --bg:#ffffff;
-      --text:#111827;
-      --muted:#6b7280;
-      --border:#e5e7eb;
-      --card:#ffffff;
-      --btn:#111827;
-      --btnText:#ffffff;
-      --btn2:#f3f4f6;
+      --bg:#fff; --text:#111827; --muted:#6b7280; --border:#e5e7eb;
+      --btn:#111827; --btnText:#fff; --btn2:#f3f4f6;
     }
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
+      margin:0; background:var(--bg); color:var(--text);
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;
     }
     header{
-      position:sticky; top:0; z-index:10;
-      background:#fff;
-      border-bottom:1px solid var(--border);
-      padding:12px 14px;
+      position:sticky; top:0; z-index:10; background:#fff;
+      border-bottom:1px solid var(--border); padding:12px 14px;
     }
-    header .title{ font-size:16px; font-weight:700; margin:0; }
-    header .sub{ margin-top:6px; font-size:12px; color:var(--muted); line-height:1.35; word-break:break-all; }
-
-    main{ padding:12px 12px 92px; max-width:720px; margin:0 auto; display:grid; gap:12px; }
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:12px;
+    h1{ margin:0; font-size:16px; font-weight:700; }
+    .sub{ margin-top:6px; font-size:12px; color:var(--muted); line-height:1.35; word-break:break-all; }
+    main{ padding:12px; max-width:820px; margin:0 auto; display:grid; gap:12px; }
+    .card{ border:1px solid var(--border); border-radius:12px; padding:12px; background:#fff; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .row > * { flex: 1 1 180px; }
+    .row.compact > *{ flex:0 0 auto; }
+    button, input, select, textarea{ font:inherit; }
+    button{
+      border:1px solid var(--border); background:#fff; border-radius:10px;
+      padding:10px 12px; cursor:pointer; font-size:14px; font-weight:650;
     }
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
-    .left{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-
+    button.primary{ background:var(--btn); color:var(--btnText); border-color:var(--btn); }
+    button.secondary{ background:var(--btn2); }
+    button:disabled{ opacity:.5; cursor:not-allowed; }
+    button:active{ transform: translateY(1px); }
+    input[type="file"]{
+      width:100%; padding:10px; border-radius:10px;
+      border:1px dashed #d1d5db; background:#fff; font-size:13px;
+    }
+    select{
+      width:100%; padding:10px; border-radius:10px;
+      border:1px solid var(--border); background:#fff; font-size:13px;
+    }
+    .hint{ font-size:12px; color:var(--muted); line-height:1.5; margin-top:8px; }
     .pill{
-      font-size:12px; padding:6px 10px; border-radius:999px;
+      display:inline-block; font-size:12px; padding:6px 10px; border-radius:999px;
       border:1px solid var(--border); background:#fff; color:var(--muted);
     }
     .pill.ok{ color:#065f46; border-color:#a7f3d0; background:#ecfdf5; }
     .pill.bad{ color:#9f1239; border-color:#fecdd3; background:#fff1f2; }
-
-    .hint{ font-size:12px; color:var(--muted); line-height:1.5; margin-top:8px; }
-    .btn-mini{
-      width:auto; padding:8px 10px; font-size:12px;
-      border-radius:10px; border:1px solid var(--border); background:#fff;
-    }
-
-    input[type="file"], button, textarea{ font:inherit; }
-    input[type="file"]{
-      width:100%;
-      padding:10px;
-      border-radius:10px;
-      border:1px dashed #d1d5db;
-      background:#fff;
-      font-size:13px;
-    }
-    button{
-      width:100%;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:#fff;
-      cursor:pointer;
-      font-size:14px;
-      font-weight:650;
-    }
-    button.primary{
-      background:var(--btn);
-      color:var(--btnText);
-      border-color:var(--btn);
-    }
-    button.secondary{
-      background:var(--btn2);
-      color:var(--text);
-    }
-    button:disabled{ opacity:.5; cursor:not-allowed; }
-    button:active{ transform:translateY(1px); }
-
     .preview{
-      display:grid;
-      grid-template-columns: 104px 1fr;
-      gap:12px;
-      align-items:start;
+      display:grid; grid-template-columns: 120px 1fr; gap:12px; align-items:start;
     }
     .preview img{
-      width:104px; height:104px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:#f9fafb;
-      object-fit:cover;
+      width:120px; height:120px; border-radius:12px;
+      border:1px solid var(--border); background:#f9fafb; object-fit:cover;
     }
-    .kv{ display:grid; grid-template-columns: 92px 1fr; gap:6px 10px; font-size:12.5px; }
+    .kv{ display:grid; grid-template-columns: 96px 1fr; gap:6px 10px; font-size:12.5px; }
     .kv .k{ color:var(--muted); }
     .kv .v{ color:var(--text); word-break:break-all; }
-
-    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-
+    textarea{
+      width:100%; min-height:180px; border-radius:12px; border:1px solid var(--border);
+      padding:10px; background:#fff; color:#111827;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px; resize:vertical;
+    }
     details{ border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; }
     summary{
-      padding:12px; cursor:pointer; list-style:none;
-      display:flex; align-items:center; justify-content:space-between;
-      font-weight:700; font-size:14px;
+      padding:12px; cursor:pointer; list-style:none; font-weight:700; font-size:14px;
+      display:flex; justify-content:space-between; align-items:center;
     }
     summary::-webkit-details-marker{ display:none; }
     summary .small{ font-size:12px; color:var(--muted); font-weight:600; }
-    textarea{
-      width:100%;
-      min-height:200px;
-      border:none; outline:none;
-      border-top:1px solid var(--border);
-      padding:12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size:12px;
-      resize:vertical;
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    @media (max-width: 560px){
+      .preview{ grid-template-columns: 1fr; }
+      .preview img{ width:100%; height:220px; }
+      .kv{ grid-template-columns: 84px 1fr; }
+      .row > * { flex: 1 1 100%; }
+      .grid2{ grid-template-columns: 1fr; }
     }
-
-    .bar{
-      position:fixed; left:0; right:0; bottom:0; z-index:20;
-      background:#fff;
-      border-top:1px solid var(--border);
-      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-    }
-    .bar .grid{
-      max-width:720px; margin:0 auto;
-      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
-    }
-    .bar .note{
-      max-width:720px; margin:8px auto 0;
-      font-size:12px; color:var(--muted); line-height:1.4;
-    }
+    code{ background:#f3f4f6; padding:2px 6px; border-radius:6px; }
   </style>
 </head>
 
 <body>
 <header>
-  <div class="title">图片验证页（Simple Base64）</div>
+  <h1>图片验证页（分按钮验证 saveImage）</h1>
   <div class="sub" id="envLine"></div>
 </header>
 
 <main>
   <section class="card">
-    <div class="row">
-      <div class="left">
+    <div class="row compact" style="justify-content:space-between;">
+      <div class="row compact" style="gap:8px;">
         <span class="pill" id="bridgePill">检测中…</span>
         <span class="pill" id="bridgeDetail">-</span>
       </div>
-      <div class="left">
-        <button class="btn-mini" id="btnCopyLog">复制日志</button>
-        <button class="btn-mini" id="btnClearLog">清空</button>
+      <div class="row compact" style="gap:8px;">
+        <button id="btnRefresh" class="secondary">刷新检测</button>
+        <button id="btnCopyLog" class="secondary">复制日志</button>
+        <button id="btnClearLog" class="secondary">清空日志</button>
       </div>
     </div>
     <div class="hint">
-      本页固定使用 <b>纯 base64</b> 调用 App <code>saveImage</code>（不带 <code>data:image/...;base64,</code> 头）。
-      普通浏览器可验证「选图/下载」；App WebView 内可验证「App 保存」。
+      说明：App 保存固定使用 <b>纯 base64</b>（不带 <code>data:image/...;base64,</code> 头）。
+      下面每个按钮只对应一种调用方式，你可以逐个点击来判断哪种成功。
     </div>
   </section>
 
   <section class="card">
-    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">1) 浏览器上传（选图）</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">1) 选择图片（浏览器上传）</div>
     <input id="fileInput" type="file" accept="image/*" />
-    <div class="grid2" style="margin-top:10px;">
-      <button class="secondary" id="btnLoadSample">加载示例图片</button>
-      <button class="secondary" id="btnRefreshBridge">刷新桥接检测</button>
+    <div class="row" style="margin-top:10px;">
+      <button id="btnLoadSample" class="secondary">加载示例图片</button>
+      <button id="btnDownload" class="primary" disabled>浏览器下载当前图片</button>
     </div>
-    <div class="hint">示例图片在本地生成，不依赖网络，方便直接测试下载 / App 保存。</div>
+    <div class="hint">示例图片本地生成，不依赖网络。</div>
   </section>
 
   <section class="card">
@@ -188,14 +133,42 @@
       </div>
     </div>
 
-    <div class="hint">
-      App 保存调用会优先尝试：<code>saveImage(base64String[, cb])</code>，失败再降级：<code>saveImage({type:"base64", value: base64, filename, mime}[, cb])</code>。
+    <div class="grid2" style="margin-top:12px;">
+      <div>
+        <div class="hint" style="margin:0 0 6px;">format / ext</div>
+        <select id="format">
+          <option value="png">png</option>
+          <option value="jpg">jpg</option>
+        </select>
+      </div>
+      <div>
+        <div class="hint" style="margin:0 0 6px;">filename（可选）</div>
+        <input id="filename" placeholder="留空则自动生成，如 saved_123.png" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);" />
+      </div>
     </div>
   </section>
 
   <section class="card">
-    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">最近一次 saveImage 入参</div>
-    <textarea id="lastPayload" readonly placeholder="点击「App 保存」后这里会显示 base64 字符串摘要和 payload"></textarea>
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">3) App 保存（每种方式一个按钮）</div>
+
+    <div class="hint" style="margin-top:0;">
+      入口自动识别：<code>window.saveImage</code> 或 <code>window.AppBridge.saveImage</code>。
+      你点击按钮后会记录：调用方式、入参摘要、耗时、返回值/错误。
+    </div>
+
+    <div class="row" style="margin-top:10px;">
+      <button id="btnS1" class="primary" disabled>① saveImage(base64)</button>
+      <button id="btnS2" class="primary" disabled>② saveImage(base64, cb)</button>
+      <button id="btnS3" class="primary" disabled>③ saveImage({ base64 })</button>
+      <button id="btnS4" class="primary" disabled>④ saveImage({ data })</button>
+      <button id="btnS5" class="primary" disabled>⑤ saveImage({ value })</button>
+      <button id="btnS6" class="primary" disabled>⑥ saveImage({ base64, filename, mime, format, ext })</button>
+      <button id="btnS7" class="primary" disabled>⑦ saveImage({ type:"base64", value, filename, mime })</button>
+      <button id="btnS8" class="primary" disabled>⑧ saveImage({ image: base64, ext })</button>
+    </div>
+
+    <div class="hint" style="margin-top:10px;">最近一次点击的入参（已脱敏，仅保留 base64 前 80 字符 + 长度）：</div>
+    <textarea id="lastTry" readonly></textarea>
   </section>
 
   <details open>
@@ -204,61 +177,67 @@
   </details>
 </main>
 
-<div class="bar">
-  <div class="grid">
-    <button class="primary" id="btnBrowserDownload" disabled>浏览器下载</button>
-    <button class="primary" id="btnAppSave" disabled>App 保存（saveImage）</button>
-  </div>
-  <div class="note">
-    浏览器下载以“触发下载行为”为验证；App 保存以回调/返回值为准，并建议到相册/文件确认。
-  </div>
-</div>
-
 <script>
 (() => {
   const state = {
     file: null,
-    dataUrl: null,     // data:image/...;base64,...
-    base64: null,      // 纯 base64（不带头）
     blob: null,
+    dataUrl: null,
+    base64: null,      // 纯 base64（不带 data:image/...;base64,）
     objectUrl: null,
     srcType: "-",
     imgWidth: null,
-    imgHeight: null,
+    imgHeight: null
   };
+
   const $ = (id) => document.getElementById(id);
 
   function nowISO() {
     const d = new Date();
-    const pad = (n) => String(n).padStart(2,"0");
+    const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${String(d.getMilliseconds()).padStart(3,"0")}`;
   }
-  function prettyBytes(bytes) {
-    if (bytes == null || isNaN(bytes)) return "-";
-    const u = ["B","KB","MB","GB"];
-    let b = bytes, i = 0;
-    while (b >= 1024 && i < u.length-1) { b /= 1024; i++; }
-    return `${b.toFixed(b >= 10 || i===0 ? 0 : 1)} ${u[i]}`;
-  }
+
   function safeStringify(v) {
     try {
       return JSON.stringify(v, (k, val) => {
-        if (typeof val === "string" && val.length > 1200) return val.slice(0,1200) + "…(truncated)";
+        if (typeof val === "string" && val.length > 1600) return val.slice(0, 1600) + "…(truncated)";
         return val;
       }, 2);
-    } catch { return String(v); }
+    } catch {
+      return String(v);
+    }
   }
+
   function log(type, message, data) {
-    const line = `[${nowISO()}] [${type}] ${message}` + (data !== undefined ? `\n${safeStringify(data)}\n` : "\n");
+    const line =
+      `[${nowISO()}] [${type}] ${message}` +
+      (data !== undefined ? `\n${safeStringify(data)}\n` : "\n");
     $("logBox").value = line + $("logBox").value;
   }
+
+  function prettyBytes(bytes) {
+    if (bytes == null || isNaN(bytes)) return "-";
+    const u = ["B", "KB", "MB", "GB"];
+    let b = bytes, i = 0;
+    while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+    return `${b.toFixed(b >= 10 || i === 0 ? 0 : 1)} ${u[i]}`;
+  }
+
   function cleanupObjectUrl() {
-    if (state.objectUrl) { URL.revokeObjectURL(state.objectUrl); state.objectUrl = null; }
+    if (state.objectUrl) {
+      URL.revokeObjectURL(state.objectUrl);
+      state.objectUrl = null;
+    }
   }
-  function setPreview(src, reason) {
-    $("imgPreview").src = src || "";
-    $("srcType").textContent = reason || "-";
+
+  function extractPureBase64(dataUrlOrBase64) {
+    if (!dataUrlOrBase64) return null;
+    const idx = dataUrlOrBase64.indexOf("base64,");
+    let b64 = idx >= 0 ? dataUrlOrBase64.slice(idx + 7) : dataUrlOrBase64;
+    return b64.replace(/\s+/g, "");
   }
+
   async function loadImageDim(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -268,85 +247,47 @@
     });
   }
 
-  // ---- Bridge detect ----
-  function detectSaveImage() {
+  // -------- Bridge detect --------
+  function getSaveImageFn() {
     if (typeof window.saveImage === "function") {
-      return { available: true, type: "window.saveImage(arg[, cb])" };
+      return { fn: window.saveImage, where: "window.saveImage" };
     }
     if (window.AppBridge && typeof window.AppBridge.saveImage === "function") {
-      return { available: true, type: "window.AppBridge.saveImage(arg[, cb])" };
+      return { fn: window.AppBridge.saveImage, where: "window.AppBridge.saveImage" };
     }
-    const hasWK = !!(window.webkit && window.webkit.messageHandlers);
-    if (hasWK) return { available: false, type: "iOS WKWebView（未发现可直接调用 saveImage 函数）" };
-    return { available: false, type: "未检测到 saveImage" };
+    return { fn: null, where: "not-found" };
   }
 
-  async function callAppSaveImage(base64, meta, timeoutMs = 15000) {
-    const det = detectSaveImage();
-    if (!det.available) throw new Error("saveImage 未注入（window.saveImage / window.AppBridge.saveImage 都不存在）");
+  function refreshBridge() {
+    $("envLine").textContent = `UA: ${navigator.userAgent}`;
+    const { fn, where } = getSaveImageFn();
+    const ok = !!fn;
 
-    const fn = (typeof window.saveImage === "function") ? window.saveImage : window.AppBridge.saveImage;
-    const start = performance.now();
+    $("bridgePill").textContent = ok ? "已检测到 saveImage" : "未检测到 saveImage";
+    $("bridgePill").className = "pill " + (ok ? "ok" : "bad");
+    $("bridgeDetail").textContent = where;
 
-    function wrapPromiseOrCallback(invoke) {
-      let p = null;
-
-      // 1) Promise
-      try {
-        const maybe = invoke();
-        if (maybe && typeof maybe.then === "function") p = maybe;
-      } catch {
-        p = null;
-      }
-
-      // 2) callback：fn(arg, cb)
-      if (!p) {
-        p = new Promise((resolve, reject) => {
-          try { invoke((res) => resolve(res)); }
-          catch (err) { reject(err); }
-        });
-      }
-
-      // 3) timeout
-      return new Promise((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error(`saveImage 超时（>${timeoutMs}ms）`)), timeoutMs);
-        p.then((r) => { clearTimeout(t); resolve(r); })
-         .catch((e) => { clearTimeout(t); reject(e); });
-      });
-    }
-
-    // ✅ 优先：只传纯 base64 字符串（很多 App 只吃这个）
-    try {
-      const result = await wrapPromiseOrCallback((cb) => cb ? fn(base64, cb) : fn(base64));
-      return { result, costMs: Math.round(performance.now() - start), bridgeType: det.type, argMode: "base64-string" };
-    } catch (e1) {
-      // ⛳ 降级：传对象（如果你们是对象协议）
-      const payload = {
-        type: "base64",
-        value: base64,
-        filename: meta?.filename,
-        mime: meta?.mime
-      };
-      const result = await wrapPromiseOrCallback((cb) => cb ? fn(payload, cb) : fn(payload));
-      return { result, costMs: Math.round(performance.now() - start), bridgeType: det.type, argMode: "payload-object" };
-    }
+    const enable = ok && !!state.base64;
+    ["btnS1","btnS2","btnS3","btnS4","btnS5","btnS6","btnS7","btnS8"].forEach(id => {
+      $(id).disabled = !enable;
+    });
   }
 
-  // ---- Data prepare ----
-  function extractPureBase64(dataUrlOrBase64) {
-    if (!dataUrlOrBase64) return null;
-    const idx = dataUrlOrBase64.indexOf("base64,");
-    let b64 = idx >= 0 ? dataUrlOrBase64.slice(idx + 7) : dataUrlOrBase64;
-    // 去掉潜在空白
-    b64 = b64.replace(/\s+/g, "");
-    return b64;
+  // -------- Data prepare --------
+  function updateInfo() {
+    $("fileName").textContent = state.file?.name || "-";
+    $("mimeType").textContent = state.file?.type || state.blob?.type || "-";
+    $("fileSize").textContent = state.file ? prettyBytes(state.file.size) : (state.blob ? prettyBytes(state.blob.size) : "-");
+    $("imgDim").textContent = (state.imgWidth && state.imgHeight) ? `${state.imgWidth} x ${state.imgHeight}` : "-";
+    $("b64Len").textContent = state.base64 ? String(state.base64.length) : "-";
+    $("btnDownload").disabled = !state.blob;
   }
 
-  async function handleFile(file) {
+  async function setFromFile(file) {
     cleanupObjectUrl();
     state.file = file;
-    state.srcType = "browser-file";
     state.blob = file;
+    state.srcType = "browser-file";
     state.objectUrl = URL.createObjectURL(file);
 
     state.dataUrl = await new Promise((resolve, reject) => {
@@ -358,18 +299,21 @@
 
     state.base64 = extractPureBase64(state.dataUrl);
 
-    setPreview(state.objectUrl, state.srcType);
+    $("imgPreview").src = state.objectUrl;
+    $("srcType").textContent = state.srcType;
 
     try {
       const dim = await loadImageDim(state.objectUrl);
       state.imgWidth = dim.w; state.imgHeight = dim.h;
-    } catch { state.imgWidth = state.imgHeight = null; }
+    } catch {
+      state.imgWidth = state.imgHeight = null;
+    }
 
+    updateInfo();
     log("BROWSER", "已选择图片", { name: file.name, type: file.type, size: file.size, base64Length: state.base64?.length });
-    updateUI();
   }
 
-  function makeSampleImageDataUrl() {
+  function makeSampleDataUrl() {
     const c = document.createElement("canvas");
     c.width = 900; c.height = 600;
     const ctx = c.getContext("2d");
@@ -381,39 +325,39 @@
     ctx.font = "22px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas";
     ctx.fillText(nowISO(), 40, 140);
     ctx.font = "20px system-ui,-apple-system,Segoe UI,Roboto";
-    ctx.fillText("用于验证：浏览器下载 / App saveImage(base64)", 40, 190);
+    ctx.fillText("Test saveImage(base64)", 40, 190);
     return c.toDataURL("image/png");
   }
 
   async function loadSample() {
     cleanupObjectUrl();
-    const dataUrl = makeSampleImageDataUrl();
     state.file = null;
     state.srcType = "sample";
-    state.dataUrl = dataUrl;
+    state.dataUrl = makeSampleDataUrl();
     state.base64 = extractPureBase64(state.dataUrl);
 
-    const blob = await (await fetch(dataUrl)).blob();
+    const blob = await (await fetch(state.dataUrl)).blob();
     state.blob = blob;
     state.objectUrl = URL.createObjectURL(blob);
 
-    setPreview(state.objectUrl, state.srcType);
+    $("imgPreview").src = state.objectUrl;
+    $("srcType").textContent = state.srcType;
 
     try {
       const dim = await loadImageDim(state.objectUrl);
       state.imgWidth = dim.w; state.imgHeight = dim.h;
-    } catch { state.imgWidth = state.imgHeight = null; }
+    } catch {
+      state.imgWidth = state.imgHeight = null;
+    }
 
+    updateInfo();
     log("BROWSER", "已加载示例图片", { mime: blob.type, size: blob.size, base64Length: state.base64?.length });
-    updateUI();
   }
 
-  async function browserDownload() {
+  // -------- Browser download --------
+  function browserDownload() {
     if (!state.blob) return;
-    // 保持简单：直接下载当前 blob（不强制转码）
-    const ext = (state.file?.name && state.file.name.includes(".")) ? state.file.name.split(".").pop() : "png";
-    const filename = state.file?.name || `image_${Date.now()}.${ext}`;
-
+    const filename = state.file?.name || `image_${Date.now()}.png`;
     const url = URL.createObjectURL(state.blob);
     const a = document.createElement("a");
     a.href = url;
@@ -421,85 +365,195 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-
     log("BROWSER", "已触发下载", { filename, size: state.blob.size });
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  function guessFilename(defaultExt) {
-    if (state.file?.name) return state.file.name;
-    return `saved_${Date.now()}.${defaultExt || "png"}`;
+  // -------- App call wrappers (separate buttons) --------
+  function guessMeta() {
+    const format = $("format").value; // png/jpg
+    const mime = format === "jpg" ? "image/jpeg" : "image/png";
+    const filenameInput = ($("filename").value || "").trim();
+    const filename = filenameInput || (state.file?.name || `saved_${Date.now()}.${format}`);
+    const ext = format;
+    return { format, mime, filename, ext };
   }
 
-  async function appSave() {
+  function redactArg(arg) {
+    // 脱敏：只保留 base64 前 80 字符与长度
+    if (typeof arg === "string") {
+      return { kind: "string", base64Head: arg.slice(0, 80) + (arg.length > 80 ? "..." : ""), base64Len: arg.length };
+    }
+    if (arg && typeof arg === "object") {
+      const copy = { ...arg };
+      const key = ["base64","data","value","image","content"].find(k => typeof copy[k] === "string");
+      if (key) {
+        const s = copy[key];
+        copy[key] = `${s.slice(0, 80)}... (len=${s.length})`;
+        copy.__rawKey = key;
+      }
+      return { kind: "object", payload: copy };
+    }
+    return { kind: typeof arg, value: arg };
+  }
+
+  async function invokePromiseOnly(fn, arg, timeoutMs = 15000) {
+    // 用于“严格验证 Promise 形态”：如果不是 Promise 就算失败（便于你定位）
+    const start = performance.now();
+    const maybe = fn(arg);
+    if (!maybe || typeof maybe.then !== "function") {
+      throw new Error("not-a-promise");
+    }
+    const withTimeout = new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error(`timeout > ${timeoutMs}ms`)), timeoutMs);
+      maybe.then((r) => { clearTimeout(t); resolve(r); }).catch((e) => { clearTimeout(t); reject(e); });
+    });
+    const result = await withTimeout;
+    return { result, costMs: Math.round(performance.now() - start), mode: "promise" };
+  }
+
+  async function invokeCallbackOnly(fn, arg, timeoutMs = 15000) {
+    // 用于“严格验证 callback 形态”：fn(arg, cb)
+    const start = performance.now();
+    const result = await new Promise((resolve, reject) => {
+      let done = false;
+      const t = setTimeout(() => {
+        if (!done) { done = true; reject(new Error(`timeout > ${timeoutMs}ms`)); }
+      }, timeoutMs);
+
+      try {
+        fn(arg, (res) => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          resolve(res);
+        });
+      } catch (e) {
+        if (done) return;
+        done = true;
+        clearTimeout(t);
+        reject(e);
+      }
+    });
+    return { result, costMs: Math.round(performance.now() - start), mode: "callback" };
+  }
+
+  async function runAppCall(label, kind, arg) {
+    const { fn, where } = getSaveImageFn();
+    if (!fn) {
+      alert("未检测到 saveImage");
+      return;
+    }
     if (!state.base64) {
       alert("没有 base64（请先选图/示例图）");
       return;
     }
 
-    const meta = {
-      filename: guessFilename("png"),
-      mime: state.file?.type || state.blob?.type || "image/png",
-    };
-
-    // 给 textarea 展示摘要（避免贴太长）
-    const summary = {
-      base64Prefix: state.base64.slice(0, 60) + "...",
-      base64Length: state.base64.length,
-      meta,
-      // 备用对象 payload（用于对齐协议）
-      payloadObject: { type: "base64", value: "(base64)", filename: meta.filename, mime: meta.mime }
-    };
-    $("lastPayload").value = safeStringify(summary);
-
-    log("APP", "准备调用 saveImage（纯 base64）", { base64Length: state.base64.length, meta });
+    const summary = { label, where, arg: redactArg(arg) };
+    $("lastTry").value = safeStringify(summary);
+    log("APP", `点击：${label}`, summary);
 
     try {
-      const { result, costMs, bridgeType, argMode } = await callAppSaveImage(state.base64, meta);
-      log("APP", "saveImage 成功", { bridgeType, argMode, costMs, result });
-      alert("saveImage 调用成功：请去相册/文件确认");
+      let out;
+      if (kind === "promise") {
+        out = await invokePromiseOnly(fn, arg);
+      } else if (kind === "callback") {
+        out = await invokeCallbackOnly(fn, arg);
+      } else {
+        // fallback：先 promise，失败再 callback（不严格），但仍然只对应“这一个按钮的 arg”
+        try {
+          out = await invokePromiseOnly(fn, arg);
+        } catch {
+          out = await invokeCallbackOnly(fn, arg);
+          out.mode = "callback(fallback)";
+        }
+      }
+
+      log("APP", `成功：${label}`, { where, ...out });
+      alert(`成功：${label}\nmode=${out.mode}\n请去相册/文件确认`);
     } catch (e) {
-      log("APP", "saveImage 失败", { error: String(e), stack: e?.stack });
-      alert("saveImage 调用失败：\n" + String(e));
+      log("APP", `失败：${label}`, { where, error: String(e), stack: e?.stack });
+      alert(`失败：${label}\n${String(e)}`);
     }
   }
 
-  function updateUI() {
-    $("fileName").textContent = state.file?.name || "-";
-    $("mimeType").textContent = state.file?.type || state.blob?.type || "-";
-    $("fileSize").textContent = state.file ? prettyBytes(state.file.size) : (state.blob ? prettyBytes(state.blob.size) : "-");
-    $("imgDim").textContent = (state.imgWidth && state.imgHeight) ? `${state.imgWidth} x ${state.imgHeight}` : "-";
-    $("b64Len").textContent = state.base64 ? String(state.base64.length) : "-";
+  // Buttons -> specific args
+  function wireSaveButtons() {
+    $("btnS1").addEventListener("click", () => {
+      runAppCall("① saveImage(base64) [Promise优先]", "either", state.base64);
+    });
 
-    $("btnBrowserDownload").disabled = !state.blob;
+    $("btnS2").addEventListener("click", () => {
+      // 强制用 callback 形态验证
+      runAppCall("② saveImage(base64, cb) [仅Callback]", "callback", state.base64);
+    });
 
-    const det = detectSaveImage();
-    $("btnAppSave").disabled = !det.available || !state.base64;
+    $("btnS3").addEventListener("click", () => {
+      runAppCall("③ saveImage({ base64 })", "either", { base64: state.base64 });
+    });
+
+    $("btnS4").addEventListener("click", () => {
+      runAppCall("④ saveImage({ data })", "either", { data: state.base64 });
+    });
+
+    $("btnS5").addEventListener("click", () => {
+      runAppCall("⑤ saveImage({ value })", "either", { value: state.base64 });
+    });
+
+    $("btnS6").addEventListener("click", () => {
+      const meta = guessMeta();
+      runAppCall("⑥ saveImage({ base64, filename, mime, format, ext })", "either", {
+        base64: state.base64,
+        filename: meta.filename,
+        mime: meta.mime,
+        format: meta.format,
+        ext: meta.ext
+      });
+    });
+
+    $("btnS7").addEventListener("click", () => {
+      const meta = guessMeta();
+      runAppCall('⑦ saveImage({ type:"base64", value, filename, mime })', "either", {
+        type: "base64",
+        value: state.base64,
+        filename: meta.filename,
+        mime: meta.mime
+      });
+    });
+
+    $("btnS8").addEventListener("click", () => {
+      const meta = guessMeta();
+      runAppCall("⑧ saveImage({ image: base64, ext })", "either", {
+        image: state.base64,
+        ext: meta.ext
+      });
+    });
   }
 
-  function refreshEnv() {
-    $("envLine").textContent = `UA: ${navigator.userAgent}`;
-    const det = detectSaveImage();
-    $("bridgePill").textContent = det.available ? "已检测到 saveImage" : "未检测到 saveImage";
-    $("bridgePill").className = "pill " + (det.available ? "ok" : "bad");
-    $("bridgeDetail").textContent = det.type;
-    updateUI();
-  }
-
-  // ---- Events ----
+  // -------- UI actions --------
   $("fileInput").addEventListener("change", async (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
-    try { await handleFile(f); }
-    catch (err) {
+    try {
+      await setFromFile(f);
+      refreshBridge();
+    } catch (err) {
       log("ERROR", "处理文件失败", { error: String(err), stack: err?.stack });
       alert("处理文件失败：" + String(err));
     }
   });
 
-  $("btnLoadSample").addEventListener("click", loadSample);
-  $("btnBrowserDownload").addEventListener("click", browserDownload);
-  $("btnAppSave").addEventListener("click", appSave);
+  $("btnLoadSample").addEventListener("click", async () => {
+    await loadSample();
+    refreshBridge();
+  });
+
+  $("btnDownload").addEventListener("click", browserDownload);
+
+  $("btnRefresh").addEventListener("click", () => {
+    refreshBridge();
+    log("SYS", "手动刷新检测", { bridge: getSaveImageFn().where });
+  });
 
   $("btnClearLog").addEventListener("click", () => $("logBox").value = "");
   $("btnCopyLog").addEventListener("click", async () => {
@@ -507,27 +561,25 @@
       await navigator.clipboard.writeText($("logBox").value);
       alert("已复制日志");
     } catch {
-      $("logBox").focus(); $("logBox").select();
+      $("logBox").focus();
+      $("logBox").select();
       alert("不支持 clipboard API，已选中日志请手动复制");
     }
   });
 
-  $("btnRefreshBridge").addEventListener("click", () => {
-    refreshEnv();
-    log("SYS", "手动刷新 bridge 检测");
-  });
-
-  // App 可在注入完成后调用此函数刷新按钮状态
+  // App 可在注入完成后调用此函数刷新状态
   window.__refreshBridge = () => {
-    refreshEnv();
+    refreshBridge();
     log("SYS", "App 调用 __refreshBridge 刷新完成");
   };
 
   // Init
-  loadSample().finally(() => {
-    refreshEnv();
-    log("SYS", "初始化完成", { bridge: detectSaveImage() });
-  });
+  wireSaveButtons();
+  (async () => {
+    await loadSample();
+    refreshBridge();
+    log("SYS", "初始化完成", { bridge: getSaveImageFn().where });
+  })();
 })();
 </script>
 </body>
