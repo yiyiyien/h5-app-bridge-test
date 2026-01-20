@@ -1,1 +1,545 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>图片验证页（Simple）</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --card:#ffffff;
+      --btn:#111827;
+      --btnText:#ffffff;
+      --btn2:#f3f4f6;
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      background:#fff;
+      border-bottom:1px solid var(--border);
+      padding:12px 14px;
+    }
+    header .title{ font-size:16px; font-weight:700; margin:0; }
+    header .sub{ margin-top:6px; font-size:12px; color:var(--muted); line-height:1.35; word-break:break-all; }
+
+    main{ padding:12px 12px 92px; max-width:720px; margin:0 auto; display:grid; gap:12px; }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .left{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    .pill{
+      font-size:12px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--border); background:#fff; color:var(--muted);
+    }
+    .pill.ok{ color:#065f46; border-color:#a7f3d0; background:#ecfdf5; }
+    .pill.bad{ color:#9f1239; border-color:#fecdd3; background:#fff1f2; }
+
+    .hint{ font-size:12px; color:var(--muted); line-height:1.5; margin-top:8px; }
+    .btn-mini{
+      width:auto; padding:8px 10px; font-size:12px;
+      border-radius:10px; border:1px solid var(--border); background:#fff;
+    }
+
+    input[type="file"], select, button, textarea{ font:inherit; }
+    input[type="file"]{
+      width:100%;
+      padding:10px;
+      border-radius:10px;
+      border:1px dashed #d1d5db;
+      background:#fff;
+      font-size:13px;
+    }
+    select{
+      width:100%;
+      padding:10px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+    button{
+      width:100%;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#fff;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:650;
+    }
+    button.primary{
+      background:var(--btn);
+      color:var(--btnText);
+      border-color:var(--btn);
+    }
+    button.secondary{
+      background:var(--btn2);
+      color:var(--text);
+    }
+    button:disabled{ opacity:.5; cursor:not-allowed; }
+    button:active{ transform:translateY(1px); }
+
+    .preview{
+      display:grid;
+      grid-template-columns: 104px 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    .preview img{
+      width:104px; height:104px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#f9fafb;
+      object-fit:cover;
+    }
+    .kv{ display:grid; grid-template-columns: 92px 1fr; gap:6px 10px; font-size:12.5px; }
+    .kv .k{ color:var(--muted); }
+    .kv .v{ color:var(--text); word-break:break-all; }
+
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+
+    details{ border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; }
+    summary{
+      padding:12px; cursor:pointer; list-style:none;
+      display:flex; align-items:center; justify-content:space-between;
+      font-weight:700; font-size:14px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    summary .small{ font-size:12px; color:var(--muted); font-weight:600; }
+    textarea{
+      width:100%;
+      min-height:200px;
+      border:none; outline:none;
+      border-top:1px solid var(--border);
+      padding:12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      resize:vertical;
+    }
+
+    .bar{
+      position:fixed; left:0; right:0; bottom:0; z-index:20;
+      background:#fff;
+      border-top:1px solid var(--border);
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+    .bar .grid{
+      max-width:720px; margin:0 auto;
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    .bar .note{
+      max-width:720px; margin:8px auto 0;
+      font-size:12px; color:var(--muted); line-height:1.4;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="title">图片验证页（Simple）</div>
+  <div class="sub" id="envLine"></div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row">
+      <div class="left">
+        <span class="pill" id="bridgePill">检测中…</span>
+        <span class="pill" id="bridgeDetail">-</span>
+      </div>
+      <div class="left">
+        <button class="btn-mini" id="btnCopyLog">复制日志</button>
+        <button class="btn-mini" id="btnClearLog">清空</button>
+      </div>
+    </div>
+    <div class="hint">
+      普通浏览器可验证「选图/下载」。App WebView 内如果注入了 <code>saveImage</code>，可验证「App 保存」。
+    </div>
+  </section>
+
+  <section class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">1) 浏览器上传（选图）</div>
+    <input id="fileInput" type="file" accept="image/*" />
+    <div class="grid2" style="margin-top:10px;">
+      <button class="secondary" id="btnLoadSample">加载示例图片</button>
+      <button class="secondary" id="btnRefreshBridge">刷新桥接检测</button>
+    </div>
+    <div class="hint">示例图片在本地生成，不依赖网络，方便直接测试下载 / App 保存。</div>
+  </section>
+
+  <section class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">2) 预览与信息</div>
+    <div class="preview">
+      <img id="imgPreview" alt="预览区" />
+      <div class="kv">
+        <div class="k">来源</div><div class="v" id="srcType">-</div>
+        <div class="k">文件名</div><div class="v" id="fileName">-</div>
+        <div class="k">MIME</div><div class="v" id="mimeType">-</div>
+        <div class="k">大小</div><div class="v" id="fileSize">-</div>
+        <div class="k">分辨率</div><div class="v" id="imgDim">-</div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:12px;">
+      <div>
+        <div class="hint" style="margin:0 0 6px;">浏览器下载格式</div>
+        <select id="downloadExt">
+          <option value="png">png</option>
+          <option value="jpg">jpg</option>
+          <option value="webp">webp</option>
+        </select>
+      </div>
+      <div>
+        <div class="hint" style="margin:0 0 6px;">App saveImage 类型</div>
+        <select id="appValueType">
+          <option value="dataUrl">dataUrl（推荐）</option>
+          <option value="base64">base64（去掉头）</option>
+          <option value="url">url（可能不兼容 blob:）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="hint">
+      若 App 不支持 <code>blob:</code> URL，请选 dataUrl/base64。页面会把每次调用的入参/出参写入日志。
+    </div>
+  </section>
+
+  <section class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">最近一次 saveImage payload</div>
+    <textarea id="lastPayload" readonly placeholder="点击「App 保存」后这里会出现 payload"></textarea>
+  </section>
+
+  <details open>
+    <summary><span>日志</span><span class="small">可收起</span></summary>
+    <textarea id="logBox" readonly></textarea>
+  </details>
+</main>
+
+<div class="bar">
+  <div class="grid">
+    <button class="primary" id="btnBrowserDownload" disabled>浏览器下载</button>
+    <button class="primary" id="btnAppSave" disabled>App 保存（saveImage）</button>
+  </div>
+  <div class="note">
+    浏览器下载以“触发下载行为”为验证；App 保存以回调/返回值为准，并建议到相册/文件确认。
+  </div>
+</div>
+
+<script>
+(() => {
+  const state = {
+    file: null,
+    dataUrl: null,
+    blob: null,
+    objectUrl: null,
+    srcType: "-",
+    imgWidth: null,
+    imgHeight: null,
+  };
+  const $ = (id) => document.getElementById(id);
+
+  function nowISO() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${String(d.getMilliseconds()).padStart(3,"0")}`;
+  }
+  function prettyBytes(bytes) {
+    if (bytes == null || isNaN(bytes)) return "-";
+    const u = ["B","KB","MB","GB"];
+    let b = bytes, i = 0;
+    while (b >= 1024 && i < u.length-1) { b /= 1024; i++; }
+    return `${b.toFixed(b >= 10 || i===0 ? 0 : 1)} ${u[i]}`;
+  }
+  function safeStringify(v) {
+    try {
+      return JSON.stringify(v, (k, val) => {
+        if (typeof val === "string" && val.length > 1200) return val.slice(0,1200) + "…(truncated)";
+        return val;
+      }, 2);
+    } catch { return String(v); }
+  }
+  function log(type, message, data) {
+    const line = `[${nowISO()}] [${type}] ${message}` + (data !== undefined ? `\n${safeStringify(data)}\n` : "\n");
+    $("logBox").value = line + $("logBox").value;
+  }
+  function cleanupObjectUrl() {
+    if (state.objectUrl) { URL.revokeObjectURL(state.objectUrl); state.objectUrl = null; }
+  }
+  function setPreview(src, reason) {
+    $("imgPreview").src = src || "";
+    $("srcType").textContent = reason || "-";
+  }
+  async function loadImageDim(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  // ---- Bridge detect & call ----
+  function detectSaveImage() {
+    if (typeof window.saveImage === "function") {
+      return { available: true, type: "window.saveImage(payload[, cb])" };
+    }
+    if (window.AppBridge && typeof window.AppBridge.saveImage === "function") {
+      return { available: true, type: "window.AppBridge.saveImage(payload[, cb])" };
+    }
+    const hasWK = !!(window.webkit && window.webkit.messageHandlers);
+    if (hasWK) return { available: false, type: "iOS WKWebView（未发现可直接调用 saveImage 函数）" };
+    return { available: false, type: "未检测到 saveImage" };
+  }
+
+  async function callAppSaveImage(payload, timeoutMs = 15000) {
+    const det = detectSaveImage();
+    if (!det.available) throw new Error("saveImage 未注入（window.saveImage / window.AppBridge.saveImage 都不存在）");
+
+    const fn = (typeof window.saveImage === "function") ? window.saveImage : window.AppBridge.saveImage;
+    const start = performance.now();
+
+    let p = null;
+
+    // 先尝试 Promise
+    try {
+      const maybe = fn(payload);
+      if (maybe && typeof maybe.then === "function") p = maybe;
+    } catch {
+      p = null;
+    }
+
+    // 再尝试 callback
+    if (!p) {
+      p = new Promise((resolve, reject) => {
+        try { fn(payload, (res) => resolve(res)); }
+        catch (err) { reject(err); }
+      });
+    }
+
+    const withTimeout = new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error(`saveImage 超时（>${timeoutMs}ms）`)), timeoutMs);
+      p.then((r) => { clearTimeout(t); resolve(r); })
+       .catch((e) => { clearTimeout(t); reject(e); });
+    });
+
+    const result = await withTimeout;
+    return { result, costMs: Math.round(performance.now() - start), bridgeType: det.type };
+  }
+
+  // ---- Data prepare ----
+  async function handleFile(file) {
+    cleanupObjectUrl();
+    state.file = file;
+    state.srcType = "browser-file";
+    state.blob = file;
+    state.objectUrl = URL.createObjectURL(file);
+
+    state.dataUrl = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+
+    setPreview(state.objectUrl, state.srcType);
+
+    try {
+      const dim = await loadImageDim(state.objectUrl);
+      state.imgWidth = dim.w; state.imgHeight = dim.h;
+    } catch { state.imgWidth = state.imgHeight = null; }
+
+    log("BROWSER", "已选择图片", { name: file.name, type: file.type, size: file.size });
+    updateUI();
+  }
+
+  function makeSampleImageDataUrl() {
+    const c = document.createElement("canvas");
+    c.width = 900; c.height = 600;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#f3f4f6";
+    ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 44px system-ui,-apple-system,Segoe UI,Roboto";
+    ctx.fillText("Sample Image", 40, 90);
+    ctx.font = "22px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas";
+    ctx.fillText(nowISO(), 40, 140);
+    ctx.font = "20px system-ui,-apple-system,Segoe UI,Roboto";
+    ctx.fillText("用于验证：浏览器下载 / App saveImage", 40, 190);
+    return c.toDataURL("image/png");
+  }
+
+  async function loadSample() {
+    cleanupObjectUrl();
+    const dataUrl = makeSampleImageDataUrl();
+    state.file = null;
+    state.srcType = "sample";
+    state.dataUrl = dataUrl;
+
+    const blob = await (await fetch(dataUrl)).blob();
+    state.blob = blob;
+    state.objectUrl = URL.createObjectURL(blob);
+
+    setPreview(state.objectUrl, state.srcType);
+
+    try {
+      const dim = await loadImageDim(state.objectUrl);
+      state.imgWidth = dim.w; state.imgHeight = dim.h;
+    } catch { state.imgWidth = state.imgHeight = null; }
+
+    log("BROWSER", "已加载示例图片", { mime: blob.type, size: blob.size });
+    updateUI();
+  }
+
+  async function browserDownload() {
+    if (!state.blob) return;
+    const ext = $("downloadExt").value;
+    const filename = `image_${Date.now()}.${ext}`;
+
+    let outBlob = state.blob;
+    try {
+      const img = new Image();
+      img.src = state.objectUrl || state.dataUrl;
+      await img.decode();
+
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth || 800;
+      c.height = img.naturalHeight || 600;
+      c.getContext("2d").drawImage(img, 0, 0);
+
+      const mimeMap = { png:"image/png", jpg:"image/jpeg", webp:"image/webp" };
+      const mime = mimeMap[ext] || "image/png";
+      outBlob = await new Promise((resolve) => c.toBlob(resolve, mime, 0.92));
+      if (!outBlob) outBlob = state.blob;
+    } catch (e) {
+      log("WARN", "转码失败，回退原 blob", String(e));
+      outBlob = state.blob;
+    }
+
+    const url = URL.createObjectURL(outBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    log("BROWSER", "已触发下载", { filename, size: outBlob.size });
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function guessFilename(defaultExt) {
+    if (state.file?.name) return state.file.name;
+    return `saved_${Date.now()}.${defaultExt || "png"}`;
+  }
+
+  function buildSavePayload() {
+    const t = $("appValueType").value;
+
+    if (t === "dataUrl") {
+      if (!state.dataUrl) throw new Error("没有 dataUrl（请先选图/示例图）");
+      return { type: "dataUrl", value: state.dataUrl, filename: guessFilename("png") };
+    }
+    if (t === "base64") {
+      if (!state.dataUrl) throw new Error("没有 dataUrl（无法提取 base64）");
+      const idx = state.dataUrl.indexOf("base64,");
+      const base64 = idx >= 0 ? state.dataUrl.slice(idx + 7) : state.dataUrl;
+      return { type: "base64", value: base64, filename: guessFilename("png") };
+    }
+    return { type: "url", value: state.objectUrl || state.dataUrl, filename: guessFilename("png") };
+  }
+
+  async function appSave() {
+    const payload = buildSavePayload();
+    $("lastPayload").value = safeStringify(payload);
+    log("APP", "准备调用 saveImage", payload);
+
+    try {
+      const { result, costMs, bridgeType } = await callAppSaveImage(payload);
+      log("APP", "saveImage 成功", { bridgeType, costMs, result });
+      alert("saveImage 调用成功：请去相册/文件确认");
+    } catch (e) {
+      log("APP", "saveImage 失败", { error: String(e), stack: e?.stack });
+      alert("saveImage 调用失败：\n" + String(e));
+    }
+  }
+
+  function updateUI() {
+    $("fileName").textContent = state.file?.name || "-";
+    $("mimeType").textContent = state.file?.type || state.blob?.type || "-";
+    $("fileSize").textContent = state.file ? prettyBytes(state.file.size) : (state.blob ? prettyBytes(state.blob.size) : "-");
+    $("imgDim").textContent = (state.imgWidth && state.imgHeight) ? `${state.imgWidth} x ${state.imgHeight}` : "-";
+
+    $("btnBrowserDownload").disabled = !state.blob;
+    const det = detectSaveImage();
+    $("btnAppSave").disabled = !det.available || (!state.dataUrl && !state.objectUrl);
+  }
+
+  function refreshEnv() {
+    $("envLine").textContent = `UA: ${navigator.userAgent}`;
+    const det = detectSaveImage();
+    $("bridgePill").textContent = det.available ? "已检测到 saveImage" : "未检测到 saveImage";
+    $("bridgePill").className = "pill " + (det.available ? "ok" : "bad");
+    $("bridgeDetail").textContent = det.type;
+    updateUI();
+  }
+
+  // ---- Events ----
+  $("fileInput").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try { await handleFile(f); }
+    catch (err) {
+      log("ERROR", "处理文件失败", { error: String(err), stack: err?.stack });
+      alert("处理文件失败：" + String(err));
+    }
+  });
+
+  $("btnLoadSample").addEventListener("click", loadSample);
+  $("btnBrowserDownload").addEventListener("click", browserDownload);
+  $("btnAppSave").addEventListener("click", appSave);
+
+  $("btnClearLog").addEventListener("click", () => $("logBox").value = "");
+  $("btnCopyLog").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("logBox").value);
+      alert("已复制日志");
+    } catch {
+      $("logBox").focus(); $("logBox").select();
+      alert("不支持 clipboard API，已选中日志请手动复制");
+    }
+  });
+
+  $("btnRefreshBridge").addEventListener("click", () => {
+    refreshEnv();
+    log("SYS", "手动刷新 bridge 检测");
+  });
+
+  // App 可在注入完成后调用此函数刷新按钮状态
+  window.__refreshBridge = () => {
+    refreshEnv();
+    log("SYS", "App 调用 __refreshBridge 刷新完成");
+  };
+
+  // Init
+  loadSample().finally(() => {
+    refreshEnv();
+    log("SYS", "初始化完成", { bridge: detectSaveImage() });
+  });
+})();
+</script>
+</body>
+</html>
 
